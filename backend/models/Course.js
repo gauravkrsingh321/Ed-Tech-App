@@ -12,7 +12,7 @@ const courseSchema = new mongoose.Schema({
     ref:"User",
     required:true
   },
-  whatYouWIllLearn:{
+  whatYouWillLearn :{
     type:String
   },
   courseContent:[

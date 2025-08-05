@@ -3,7 +3,6 @@ const Tag  = require("../models/tags")
 const User  = require("../models/User")
 const {uploadImageToCloudinary} = require("../utils/imageUploader")
 
-
 //createCourse handler function
 exports.createCourse = async (req,res) => {
   try {
