@@ -133,6 +133,10 @@ exports.signup = async (req, res) => {
     //If user not found, hash the password using bcrypt.
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    //Create the user
+    let approved="";
+    approved === "Instructor" ? (approved = false) : (approved = true);
+
     //create entry for new user in DB
     const profileDetails = await Profile.create({
       gender: null,

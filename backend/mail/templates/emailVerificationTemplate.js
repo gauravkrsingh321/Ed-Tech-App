@@ -1,4 +1,4 @@
-exports.courseEnrollmentEmail = (courseName, name) => {
+exports.emailVerificationTemplate = (courseName, name) => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,14 +67,14 @@ exports.courseEnrollmentEmail = (courseName, name) => {
     <div class="container">
       <a href="https://study-notion-edtech-project.vercel.app"><img class="logo" src="https://i.ibb.co/7Xyj3PC/logo.png"
       alt="StudyNotion Logo"></a>
-      <div class="message">Course Registration Confirmation</div>
+      <div class="message">OTP Verification Email</div>
       <div class="body">
-         <p>Dear ${name},</p>
+         <p>Dear User,</p>
          <p>
-           You have successfully registered for the course <span class="highlight">"${courseName}"</span>. We are excited to have you as a participant!
+           Thank you for registering with StudyNotion. To complete your registration, please use the following OTP(One-Time Password) to verify your account:
          </p>
-         <p>Please log in to your learning dashboard to access the course materials and start your learning.</p>
-         <a class="cta" href="https://study-notion-edtech-project.vercel.app/dashboard">Go to Dashboard</a>
+         <h2 class="highlight">${otp}<h2/>
+         <p>This OTP is valid for 5 minutes. If you did not request this verification, please disregard this email. Once your account is verified, you will have access to our platform and its features.</p>
       </div>
       <div class="support">If you have any questions or need assistance, please feel free to reach out to us. <a href="mailto:info@studynotion.com">info@studynotion.com</a>. We are here to help!</div>
     </div>

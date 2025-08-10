@@ -1,4 +1,4 @@
-exports.courseEnrollmentEmail = (courseName, name) => {
+exports.passwordUpdated = (courseName, name) => {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -71,12 +71,11 @@ exports.courseEnrollmentEmail = (courseName, name) => {
       <div class="body">
          <p>Dear ${name},</p>
          <p>
-           You have successfully registered for the course <span class="highlight">"${courseName}"</span>. We are excited to have you as a participant!
+           Your Password has been successfully updated for the email <span class="highlight">"${email}"</span> 
          </p>
-         <p>Please log in to your learning dashboard to access the course materials and start your learning.</p>
-         <a class="cta" href="https://study-notion-edtech-project.vercel.app/dashboard">Go to Dashboard</a>
+         <p>If you did not request this password change, please contact us immediately to secure your account.</p>
       </div>
-      <div class="support">If you have any questions or need assistance, please feel free to reach out to us. <a href="mailto:info@studynotion.com">info@studynotion.com</a>. We are here to help!</div>
+      <div class="support">If you have any questions or need further assistance, please feel free to reach out to us. <a href="mailto:info@studynotion.com">info@studynotion.com</a>. We are here to help!</div>
     </div>
 </body>
 
