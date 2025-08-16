@@ -1,5 +1,7 @@
 const Profile = require("../models/Profile");
 const User = require("../models/User");
+const cloudinary = require("cloudinary").v2;
+
 
 exports.updateProfile = async (req,res) => {
   try {
@@ -63,7 +65,6 @@ exports.deleteAccount = async (req,res) => {
     return res.status(200).json({
       success: true,
       message: "User Deleted Successfully",
-      updatedCourseDetails,
     });
   } 
   catch (error) {
@@ -85,6 +86,7 @@ exports.getAllUserDetails = async (req,res) => {
      return res.status(200).json({
       success: true,
       message: "User Data Fetched Successfully",
+      data:userDetails
     });
   } 
   catch (error) {
@@ -94,3 +96,45 @@ exports.getAllUserDetails = async (req,res) => {
     });
   }
 }
+
+exports.updateDisplayPicture = async (req, res) => {
+  try {
+    const id = req.user.id;
+
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({
+        success: false,
+        message: "No image file uploaded",
+      });
+    }
+
+    const file = req.files.image; // comes from express-fileupload 
+
+    // Upload image to cloudinary
+    const result = await cloudinary.uploader.upload(file.tempFilePath, {
+      folder: "profile_pictures", // optional folder name in cloudinary
+      width: 250,
+      height: 250,
+      crop: "fill",
+    });
+
+    // Update user with new image URL
+    const updatedUser = await User.findByIdAndUpdate(
+      id,
+      { image: result.secure_url },
+      { new: true }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Display picture updated successfully",
+      data:updatedUser
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error updating display picture",
+      error: error.message,
+    });
+  }
+};

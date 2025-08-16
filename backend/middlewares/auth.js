@@ -5,46 +5,56 @@ const jwt = require("jsonwebtoken")
 require("dotenv").config()
 
 //For authentication
-exports.auth = (req,res,next) => {
+// Authentication middleware
+exports.auth = (req, res, next) => {
   try {
-    //extract JWT token from body or jwt header section or cookie
-    // const token = req.body.token || req.cookies.token || req.header["authorisation"].split(" ")[1]; //3rd way is most safe
-    const token = req.body.token || req.cookies.token || req.header["Authorisation"].replace("Bearer ", ""); //3rd way is most safe
-    if(!token) { 
-      return res.status(401).json({
-        success:false,
-        message:"Token Missing"
-      }) 
+    let token = null;
+
+    // Check body
+    if (req.body && req.body.token) {
+      token = req.body.token;
+    }
+    // Check cookies
+    else if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+    // Check Authorization header
+    else if (req.headers["authorization"]) {
+      // Expected: "Bearer <token>"
+      const authHeader = req.headers["authorization"];
+      if (authHeader.startsWith("Bearer ")) {
+        token = authHeader.split(" ")[1];
+      }
     }
 
-    //verify the token
-    try {
-      const decodedToken = jwt.verify(token, process.env.JWT_sECRET) //Synchronously verify given token using a secret 
-      console.log(decodedToken);
-      req.user = decodedToken; //We stored decodedToken(payload/data ) inside request because further we want to check if role is student or admin
-    } 
-    catch (error) {
-      if (error.name === "TokenExpiredError") {
-        return res.status(401).json({
-          success: false,
-          message: "Token has expired",
-        });
-      }
+    // No token found
+    if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Token is invalid",
+        message: "Token missing",
       });
     }
-    next();
-  } 
-  catch (error) {
-    console.log(error)
-    return res.status(401).json({
-      success:false,
-      message:"Something went wrong while verifying the token"
-    }) 
+
+    // Verify token
+    try {
+      const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = decodedToken; // attach payload to request
+      next();
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({ success: false, message: "Token has expired" });
+      }
+      return res.status(401).json({ success: false, message: "Token is invalid" });
+    }
+  } catch (error) {
+    console.error("Auth middleware error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong while verifying the token",
+    });
   }
-}
+};
+
 
 //For authorization
 exports.isStudent = (req,res,next) => {

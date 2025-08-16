@@ -6,7 +6,7 @@ const otpGenerator = require("otp-generator");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-//Send OTP
+//Send OTP for email verification
 exports.sendOTP = async (req, res) => {
   try {
     //fetch email from body
@@ -17,15 +17,13 @@ exports.sendOTP = async (req, res) => {
         message: "Please enter email",
       });
     }
-    //Check if user already exists or not
+    //Check if user already present
     const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "User not registered,register first",
-        });
+    if (user)
+      return res.status(401).json({
+        success: false,
+        message: "User is already registered",
+      });
     //generate otp
     var otp = otpGenerator.generate(6, {
       upperCaseAlphabets: false,
@@ -106,7 +104,7 @@ exports.signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User is already registered",
+        message: "User is already registered. Please sign in to continue",
       });
     }
 
@@ -122,7 +120,7 @@ exports.signup = async (req, res) => {
         success: false,
         message: "OTP Not found",
       });
-    } else if (otp !== recentOTP.otp) {
+    } else if (otp !== recentOTP[0].otp) {
       //Invalid OTP
       return res.status(400).json({
         success: false,
@@ -133,9 +131,13 @@ exports.signup = async (req, res) => {
     //If user not found, hash the password using bcrypt.
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    //Create the user
-    let approved="";
-    approved === "Instructor" ? (approved = false) : (approved = true);
+    let active = true; //user account is active by default
+    let approved;
+    if (accountType === "Instructor") {
+      approved = false; // instructors need approval
+    } else {
+      approved = true; // students/admins are auto-approved
+    }
 
     //create entry for new user in DB
     const profileDetails = await Profile.create({
@@ -152,19 +154,19 @@ exports.signup = async (req, res) => {
       contactNumber,
       password: hashedPassword,
       accountType,
+      active,
+      approved,
       additionalDetails: profileDetails._id,
-      image:`https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`,
+      image: `https://api.dicebear.com/5.x/initials/svg?seed=${firstName} ${lastName}`,
     });
 
     //return response
     return res.status(200).json({
       success: true,
       message: "User Registered Successfully",
-      createdUser
+      createdUser,
     });
-
-  } 
-  catch (error) {
+  } catch (error) {
     console.log(error);
     return res.status(500).json({
       success: false,
@@ -177,7 +179,7 @@ exports.signup = async (req, res) => {
 exports.login = async (req, res) => {
   try {
     //get data
-    const { email, password} = req.body;
+    const { email, password } = req.body;
     //validate date
     if (!email || !password) {
       return res.status(403).json({
@@ -247,3 +249,64 @@ exports.login = async (req, res) => {
 };
 
 //Change Password
+exports.changePassword = async (req, res) => {
+  try {
+    //Get userId from token (middleware should already verify token & attach user to req.user)
+    const userId = req.user.id;
+
+    //Get oldPassword, newPassword, confirmNewPassword from body
+    const { oldPassword, newPassword, confirmNewPassword } = req.body;
+
+    //Validation
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    //Check newPassword and confirmNewPassword match
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New Password and Confirm New Password do not match",
+      });
+    }
+
+    //Find user by ID
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    //Match old password
+    const isPasswordMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isPasswordMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Old Password is incorrect",
+      });
+    }
+
+    //Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    //Update password in DB
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Error while changing password, please try again",
+    });
+  }
+};
